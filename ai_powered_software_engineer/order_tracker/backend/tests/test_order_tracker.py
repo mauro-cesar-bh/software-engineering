@@ -97,6 +97,18 @@ def test_update_order_status_raises_error_if_not_found(order_tracker, mock_stora
     with pytest.raises(ValueError, match="Order with ID 'MISSING' not found."):
         order_tracker.update_order_status("MISSING", "shipped")
 
+
+def test_update_order_status_raises_error_if_status_invalid(order_tracker):
+    """Tests that an unrecognized status is rejected."""
+    with pytest.raises(ValueError, match="Invalid status: 'not-a-status'."):
+        order_tracker.update_order_status("ORD001", "not-a-status")
+
+
+def test_update_order_status_raises_error_if_order_id_empty(order_tracker):
+    """Tests that an empty order ID is rejected."""
+    with pytest.raises(ValueError, match="Order ID cannot be empty."):
+        order_tracker.update_order_status("", "shipped")
+
 #########################
 ### List All Orders
 #########################
