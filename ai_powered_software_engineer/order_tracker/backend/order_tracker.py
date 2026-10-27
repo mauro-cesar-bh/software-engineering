@@ -6,6 +6,9 @@ class OrderTracker:
     Manages customer orders, providing functionalities to add, update,
     and retrieve order information.
     """
+
+    VALID_STATUSES = ("pending", "processing", "shipped")
+
     def __init__(self, storage):
         required_methods = ['save_order', 'get_order', 'get_all_orders']
         for method in required_methods:
@@ -14,26 +17,27 @@ class OrderTracker:
         self.storage = storage
 
     def add_order(self, order_id: str, item_name: str, quantity: int, customer_id: str, status: str = "pending"):
-
-        # add_order treats any returned dictionary as “this order already exists”: 
-        # If (True): {...}
         if self.storage.get_order(order_id):
             raise ValueError(f"Order with ID '{order_id}' already exists.")
 
         order = {
-        "order_id": order_id,
-        "item_name": item_name,
-        "quantity": quantity,
-        "customer_id": customer_id,
-        "status": status
-    }
+            "order_id": order_id,
+            "item_name": item_name,
+            "quantity": quantity,
+            "customer_id": customer_id,
+            "status": status,
+        }
         self.storage.save_order(order_id, order)
 
     def get_order_by_id(self, order_id: str):
         return self.storage.get_order(order_id)
 
-
     def update_order_status(self, order_id: str, new_status: str):
+        if not order_id or not str(order_id).strip():
+            raise ValueError("Order ID cannot be empty.")
+        if new_status not in self.VALID_STATUSES:
+            raise ValueError(f"Invalid status: '{new_status}'.")
+
         order = self.storage.get_order(order_id)
         if not order:
             raise ValueError(f"Order with ID '{order_id}' not found.")
