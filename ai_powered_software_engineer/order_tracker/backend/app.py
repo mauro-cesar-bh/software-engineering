@@ -1,0 +1,94 @@
+from flask import Flask, request, jsonify, send_from_directory
+from backend.order_tracker import OrderTracker
+from backend.in_memory_storage import InMemoryStorage
+
+app = Flask(__name__, static_folder='../frontend')
+in_memory_storage = InMemoryStorage()
+order_tracker = OrderTracker(in_memory_storage)
+
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
+
+@app.route('/api/orders', methods=['POST'])
+def add_order_api():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON body"}), 400
+
+    required = ["order_id", "item_name", "quantity", "customer_id"]
+    missing = [field for field in required if field not in data]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+
+    try:
+        order_tracker.add_order(
+            order_id=data["order_id"],
+            item_name=data["item_name"],
+            quantity=data["quantity"],
+            customer_id=data["customer_id"],
+            status=data.get("status", "pending"),
+        )
+    except ValueError as e:
+        # Duplicate order ID
+        return jsonify({"error": str(e)}), 409
+
+    order = order_tracker.get_order_by_id(data["order_id"])
+    return jsonify(order), 201
+
+@app.route('/api/orders/<string:order_id>', methods=['GET'])
+def get_order_api(order_id):
+    order = order_tracker.get_order_by_id(order_id)
+    if not order:
+        return jsonify({"error": f"Order with ID '{order_id}' not found."}), 404
+    return jsonify(order), 200
+
+
+
+
+@app.route('/api/orders/<string:order_id>/status', methods=['PUT'])
+def update_order_status_api(order_id):
+    data = request.get_json()
+    possible_status = ["pending", "processing", "shipped"]
+    status = data['new_status']
+
+    if status not in possible_status:
+        return jsonify({"error": f"Invalid status: '{status}'"}), 400
+
+    try:
+        order_tracker.update_order_status(order_id, new_status = status)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+
+    order = order_tracker.get_order_by_id(order_id)
+    return jsonify(order), 200
+
+
+
+@app.route('/api/orders', methods=['GET'])
+def list_orders_api():
+    status = request.args.get("status")
+
+    if status is not None:
+        possible_status = ["pending", "processing", "shipped"]
+        if status not in possible_status:
+            return jsonify({"error": f"Invalid status: '{status}'"}), 400
+        
+        orders = order_tracker.list_orders_by_status(status)
+    
+    else:
+        orders = order_tracker.list_all_orders()
+        
+    # API contract / tests expect a list, not a dict
+    return jsonify(list(orders.values())), 200
+
+
+
+
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=8000, debug=True)
