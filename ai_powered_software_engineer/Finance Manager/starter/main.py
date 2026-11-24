@@ -1,7 +1,8 @@
 """This module serves as the entry point for the program."""
+
 from balance.balance import Balance
 from balance.balance_observer import LowBalanceAlertObserver
-from balance.balance_observer import PrintObserver
+from balance.balance_observer import PrintBalance
 from transaction.transaction import Transaction
 from transaction.transaction_category import TransactionCategory
 from transaction.transaction_adapter import TransactionAdapter
@@ -10,10 +11,9 @@ from transaction.external_income_transaction import ExternalFreelanceIncome
 
 def main():
     print("Adding transactions...")
-   
-    # TODO: Create balance and add observers
+
     balance = Balance.get_instance()
-    balance.register_observer(PrintObserver())
+    balance.register_observer(PrintBalance())
     balance.register_observer(LowBalanceAlertObserver(threshold=100))
 
     # Create standard transactions
@@ -25,7 +25,9 @@ def main():
     ]
 
     # Create an external income transaction (via Adapter pattern)
-    freelance_income = ExternalFreelanceIncome(1200, "INV-98765", "Mobile App Project")
+    freelance_income = ExternalFreelanceIncome(
+        1200, "INV-98765", "Mobile App Project"
+    )
     adapter = TransactionAdapter(freelance_income)
     adapted_transaction = adapter.to_transaction()
 
@@ -36,6 +38,7 @@ def main():
         balance.apply_transaction(transaction)
 
     print(f"Final balance: ${balance.get_balance()}")
+
 
 if __name__ == "__main__":
     main()

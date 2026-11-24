@@ -5,6 +5,7 @@ from __future__ import annotations
 from balance.transaction_strategy import ExpenseStrategy, IncomeStrategy
 from transaction.transaction_category import TransactionCategory
 
+
 class Balance:
     """One shared balance for the whole app (Singleton).
 
@@ -73,7 +74,9 @@ class Balance:
         """
         strategy = self._strategies.get(transaction.category)
         if strategy is None:
-            raise ValueError(f"Invalid transaction category: {transaction.category}")
+            raise ValueError(
+                f"Invalid transaction category: {transaction.category}"
+            )
 
         strategy.apply(self, transaction.amount)
         self._notify_observers(transaction)
@@ -87,9 +90,8 @@ class Balance:
         self._strategies[category] = strategy
 
     def unregister_strategy(self, category) -> None:
-        """Remove the strategy for a category (its transactions become invalid)."""
+        """Remove a category's strategy, making it invalid."""
         del self._strategies[category]
-
 
     def get_balance(self) -> float:
         """Return the current net balance.
@@ -99,9 +101,9 @@ class Balance:
         """
         return self._net_balance
 
-    def summary(self):
-        """Return a summary string of the net balance."""
-        pass
+    def summary(self) -> str:
+        """Return a one-line summary of the current net balance."""
+        return f"Balance: ${self._net_balance:.2f}"
 
     def register_observer(self, observer) -> None:
         """Subscribe an observer to balance changes."""
@@ -115,6 +117,3 @@ class Balance:
     def _notify_observers(self, transaction) -> None:
         for observer in self._observers:
             observer.update(self._net_balance, transaction)
-
-    
-    
