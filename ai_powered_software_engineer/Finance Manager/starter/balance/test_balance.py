@@ -74,6 +74,12 @@ class TestBalance(unittest.TestCase):
         self.balance.reset()
         self.assertEqual(self.balance.get_balance(), 0.0)
 
+    def test_summary(self):
+        """summary() shows the net balance with two decimal places."""
+        self.balance.add_income(1200.5)
+        self.balance.add_expense(0.5)
+        self.assertEqual(self.balance.summary(), "Balance: $1200.00")
+
     def test_direct_construction_is_blocked(self):
         """Calling Balance() directly raises RuntimeError, forcing use of get_instance()."""
         with self.assertRaises(RuntimeError):

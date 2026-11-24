@@ -99,9 +99,9 @@ class Balance:
         """
         return self._net_balance
 
-    def summary(self):
-        """Return a summary string of the net balance."""
-        pass
+    def summary(self) -> str:
+        """Return a one-line summary of the current net balance."""
+        return f"Balance: ${self._net_balance:.2f}"
 
     def register_observer(self, observer) -> None:
         """Subscribe an observer to balance changes."""
