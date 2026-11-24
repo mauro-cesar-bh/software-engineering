@@ -4,7 +4,7 @@ from transaction.transaction_category import TransactionCategory
 
 
 class TestTransaction(unittest.TestCase):
-    """Tests for the Transaction class: its fields, its text form, and equality."""
+    """Tests for Transaction: its fields, text form, and equality."""
 
     def test_transaction_creation(self):
         """A Transaction stores the amount and category it was created with."""
@@ -13,12 +13,14 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(t.category, TransactionCategory.EXPENSE)
 
     def test_transaction_str(self):
-        """str() of an INCOME transaction of 50 is "Transaction($50, category='TransactionCategory.INCOME')"."""
+        """str() of an INCOME transaction of 50 shows its category."""
         t = Transaction(50, TransactionCategory.INCOME)
-        self.assertEqual(str(t), "Transaction($50, category='TransactionCategory.INCOME')")
+        self.assertEqual(
+            str(t), "Transaction($50, category='TransactionCategory.INCOME')"
+        )
 
     def test_transaction_equality(self):
-        """Two transactions with the same amount and category are equal, and different amounts are not."""
+        """Same amount and category means equal; other amounts do not."""
         t1 = Transaction(20, TransactionCategory.EXPENSE)
         t2 = Transaction(20, TransactionCategory.EXPENSE)
         t3 = Transaction(30, TransactionCategory.EXPENSE)
@@ -28,10 +30,12 @@ class TestTransaction(unittest.TestCase):
     def test_transaction_str_expense(self):
         """str() of an EXPENSE transaction of 75 shows the EXPENSE category."""
         t = Transaction(75, TransactionCategory.EXPENSE)
-        self.assertEqual(str(t), "Transaction($75, category='TransactionCategory.EXPENSE')")
+        self.assertEqual(
+            str(t), "Transaction($75, category='TransactionCategory.EXPENSE')"
+        )
 
     def test_transaction_not_equal_when_category_differs(self):
-        """Transactions with the same amount but different categories are not equal."""
+        """Same amount but different categories means not equal."""
         income = Transaction(20, TransactionCategory.INCOME)
         expense = Transaction(20, TransactionCategory.EXPENSE)
         self.assertNotEqual(income, expense)

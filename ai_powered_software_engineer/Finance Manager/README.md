@@ -38,7 +38,7 @@ This project uses four design patterns. Below is what each one does, how it impr
 
 2. **Adapter** (`TransactionAdapter` in `transaction/transaction_adapter.py`) — External freelance income (`ExternalFreelanceIncome`) uses a different shape (`invoice_id`, `typ`, `description`) than the app's `Transaction`. The adapter converts that object into a standard `Transaction`. `Balance` never learns about third-party formats, and a new external source only needs a new adapter.
 
-3. **Observer** (`IBalanceObserver`, `PrintObserver`, `LowBalanceAlertObserver` in `balance/balance_observer.py`) — After each successful transaction, `Balance` notifies subscribers without knowing what they do. Printing and low-balance alerts were added with no changes to `Balance` itself.
+3. **Observer** (`IBalanceObserver`, `PrintBalance`, `LowBalanceAlertObserver` in `balance/balance_observer.py`) — After each successful transaction, `Balance` notifies subscribers without knowing what they do. Printing and low-balance alerts were added with no changes to `Balance` itself.
 
 4. **Strategy** (`transaction_strategy.py`) — Replaced the category `if/elif` in `apply_transaction()` with a `category -> strategy` map. Income and expense each have their own rule object. New categories are added with `register_strategy()` without editing `apply_transaction()` (Open/Closed). Details are in [Additional Pattern: Strategy](#additional-pattern-strategy-students-choice) above.
 

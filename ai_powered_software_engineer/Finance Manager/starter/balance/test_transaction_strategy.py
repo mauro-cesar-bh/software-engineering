@@ -62,7 +62,7 @@ class TestBalanceUsesStrategies(unittest.TestCase):
         self.balance.reset()
 
     def test_new_category_without_editing_balance(self):
-        """A strategy registered for a new category is used by apply_transaction."""
+        """A strategy registered for a new category is used."""
 
         class TransferOutStrategy(ITransactionStrategy):
             def apply(self, balance, amount):
@@ -72,12 +72,14 @@ class TestBalanceUsesStrategies(unittest.TestCase):
         self.balance.register_strategy(category, TransferOutStrategy())
         self.addCleanup(self.balance.unregister_strategy, category)
 
-        self.balance.apply_transaction(SimpleNamespace(amount=30, category=category))
+        self.balance.apply_transaction(
+            SimpleNamespace(amount=30, category=category)
+        )
 
         self.assertEqual(self.balance.get_balance(), -30)
 
     def test_strategy_can_be_replaced(self):
-        """Replacing a category's strategy changes how that category is applied."""
+        """Replacing a category's strategy changes how it is applied."""
 
         class DoubleIncomeStrategy(ITransactionStrategy):
             def apply(self, balance, amount):
@@ -92,7 +94,9 @@ class TestBalanceUsesStrategies(unittest.TestCase):
             IncomeStrategy(),
         )
 
-        self.balance.apply_transaction(Transaction(10, TransactionCategory.INCOME))
+        self.balance.apply_transaction(
+            Transaction(10, TransactionCategory.INCOME)
+        )
 
         self.assertEqual(self.balance.get_balance(), 20)
 
@@ -103,7 +107,9 @@ class TestBalanceUsesStrategies(unittest.TestCase):
         self.balance.unregister_strategy(category)
 
         with self.assertRaises(ValueError):
-            self.balance.apply_transaction(SimpleNamespace(amount=1, category=category))
+            self.balance.apply_transaction(
+                SimpleNamespace(amount=1, category=category)
+            )
 
 
 if __name__ == "__main__":

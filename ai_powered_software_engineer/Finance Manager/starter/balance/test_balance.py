@@ -20,7 +20,7 @@ class RecordingObserver:
 
 
 class TestBalance(unittest.TestCase):
-    """Tests for the Balance singleton: totals, transactions, reset, and observer notifications."""
+    """Tests for the Balance singleton: totals, transactions, observers."""
 
     def setUp(self):
         """Get the shared Balance and reset it so every test starts at 0.0."""
@@ -54,15 +54,17 @@ class TestBalance(unittest.TestCase):
         self.assertEqual(self.balance.get_balance(), 150)
 
     def test_apply_transaction_expense(self):
-        """An EXPENSE transaction of 60 lowers the balance by 60, so it reads -60."""
+        """An EXPENSE of 60 lowers the balance by 60, so it reads -60."""
         t = Transaction(60, TransactionCategory.EXPENSE)
         self.balance.apply_transaction(t)
         self.assertEqual(self.balance.get_balance(), -60)
 
     def test_apply_transaction_invalid_category(self):
         """A transaction with an unknown category raises ValueError."""
+
         class FakeCategory:
             pass
+
         t = Transaction(100, FakeCategory())
         with self.assertRaises(ValueError):
             self.balance.apply_transaction(t)
@@ -81,19 +83,25 @@ class TestBalance(unittest.TestCase):
         self.assertEqual(self.balance.summary(), "Balance: $1200.00")
 
     def test_direct_construction_is_blocked(self):
-        """Calling Balance() directly raises RuntimeError, forcing use of get_instance()."""
+        """Calling Balance() raises RuntimeError; use get_instance()."""
         with self.assertRaises(RuntimeError):
             Balance()
 
     def test_apply_multiple_transactions(self):
-        """Applying +200, -50, and -25 in sequence leaves the balance at 125."""
-        self.balance.apply_transaction(Transaction(200, TransactionCategory.INCOME))
-        self.balance.apply_transaction(Transaction(50, TransactionCategory.EXPENSE))
-        self.balance.apply_transaction(Transaction(25, TransactionCategory.EXPENSE))
+        """Applying +200, -50, and -25 in sequence leaves 125."""
+        self.balance.apply_transaction(
+            Transaction(200, TransactionCategory.INCOME)
+        )
+        self.balance.apply_transaction(
+            Transaction(50, TransactionCategory.EXPENSE)
+        )
+        self.balance.apply_transaction(
+            Transaction(25, TransactionCategory.EXPENSE)
+        )
         self.assertEqual(self.balance.get_balance(), 125)
 
     def test_observer_is_notified_with_balance_and_transaction(self):
-        """A registered observer gets one update containing the new balance and the transaction."""
+        """A registered observer gets one update per transaction."""
         observer = self._register_recording_observer()
         t = Transaction(80, TransactionCategory.INCOME)
 
@@ -102,10 +110,14 @@ class TestBalance(unittest.TestCase):
         self.assertEqual(observer.calls, [(80, t)])
 
     def test_observer_receives_updated_balance_after_expense(self):
-        """After +100 and then -30, the observer sees balances 100 and then 70."""
+        """After +100 then -30, the observer sees balances 100, then 70."""
         observer = self._register_recording_observer()
-        self.balance.apply_transaction(Transaction(100, TransactionCategory.INCOME))
-        self.balance.apply_transaction(Transaction(30, TransactionCategory.EXPENSE))
+        self.balance.apply_transaction(
+            Transaction(100, TransactionCategory.INCOME)
+        )
+        self.balance.apply_transaction(
+            Transaction(30, TransactionCategory.EXPENSE)
+        )
 
         self.assertEqual([balance for balance, _ in observer.calls], [100, 70])
 
@@ -114,32 +126,39 @@ class TestBalance(unittest.TestCase):
         first = self._register_recording_observer()
         second = self._register_recording_observer()
 
-        self.balance.apply_transaction(Transaction(10, TransactionCategory.INCOME))
+        self.balance.apply_transaction(
+            Transaction(10, TransactionCategory.INCOME)
+        )
 
         self.assertEqual(len(first.calls), 1)
         self.assertEqual(len(second.calls), 1)
 
     def test_registering_same_observer_twice_notifies_once(self):
-        """Registering the same observer twice does not cause duplicate notifications."""
+        """Registering the same observer twice notifies it only once."""
         observer = self._register_recording_observer()
         self.balance.register_observer(observer)
 
-        self.balance.apply_transaction(Transaction(10, TransactionCategory.INCOME))
+        self.balance.apply_transaction(
+            Transaction(10, TransactionCategory.INCOME)
+        )
 
         self.assertEqual(len(observer.calls), 1)
 
     def test_unregistered_observer_is_not_notified(self):
-        """An observer removed with unregister_observer() receives no updates."""
+        """An unregistered observer receives no updates."""
         observer = RecordingObserver()
         self.balance.register_observer(observer)
         self.balance.unregister_observer(observer)
 
-        self.balance.apply_transaction(Transaction(10, TransactionCategory.INCOME))
+        self.balance.apply_transaction(
+            Transaction(10, TransactionCategory.INCOME)
+        )
 
         self.assertEqual(observer.calls, [])
 
     def test_observer_not_notified_on_invalid_category(self):
         """A transaction that raises ValueError does not notify observers."""
+
         class FakeCategory:
             pass
 
@@ -151,7 +170,7 @@ class TestBalance(unittest.TestCase):
         self.assertEqual(observer.calls, [])
 
     def test_add_income_and_add_expense_do_not_notify_observers(self):
-        """The low-level add_income() and add_expense() methods do not notify observers.
+        """add_income() and add_expense() do not notify observers.
 
         Only apply_transaction() sends notifications.
         """
@@ -163,7 +182,7 @@ class TestBalance(unittest.TestCase):
         self.assertEqual(observer.calls, [])
 
     def _register_recording_observer(self):
-        """Create a RecordingObserver, register it, and unregister it after the test."""
+        """Create, register, and later unregister a RecordingObserver."""
         observer = RecordingObserver()
         self.balance.register_observer(observer)
         self.addCleanup(self.balance.unregister_observer, observer)
