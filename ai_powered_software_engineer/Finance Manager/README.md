@@ -85,6 +85,45 @@ Transaction --category--> Balance._strategies[category] --apply()--> add_income 
 
 All 45 tests pass, including the original Balance, Transaction, Adapter and Observer tests, which needed no changes.
 
+## Reflection
+
+This project uses four design patterns. Below is what each one does, how it improved the design, and the trade-offs I hit while implementing them.
+
+### The four patterns
+
+1. **Singleton** (`Balance.get_instance()` in `balance/balance.py`) — Every part of the app must see the same money total. A second `Balance` object would track a different number, so the class keeps one shared instance. `__init__` raises on purpose, so callers cannot create a second, diverging total with `Balance()`.
+
+2. **Adapter** (`TransactionAdapter` in `transaction/transaction_adapter.py`) — External freelance income (`ExternalFreelanceIncome`) uses a different shape (`invoice_id`, `typ`, `description`) than the app's `Transaction`. The adapter converts that object into a standard `Transaction`. `Balance` never learns about third-party formats, and a new external source only needs a new adapter.
+
+3. **Observer** (`IBalanceObserver`, `PrintObserver`, `LowBalanceAlertObserver` in `balance/balance_observer.py`) — After each successful transaction, `Balance` notifies subscribers without knowing what they do. Printing and low-balance alerts were added with no changes to `Balance` itself.
+
+4. **Strategy** (`transaction_strategy.py`) — Replaced the category `if/elif` in `apply_transaction()` with a `category -> strategy` map. Income and expense each have their own rule object. New categories are added with `register_strategy()` without editing `apply_transaction()` (Open/Closed). Details are in [Additional Pattern: Strategy](#additional-pattern-strategy-students-choice) above.
+
+### How each improved the design
+
+| Pattern | Improvement |
+| --- | --- |
+| Singleton | One shared balance across the whole app; no risk of two totals drifting apart. |
+| Adapter | Keeps external data formats out of the core model; new sources plug in without changing `Balance` or `Transaction`. |
+| Observer | Side effects (print, alert) stay outside `Balance`; new reactions register without editing the balance logic. |
+| Strategy | Balance rules become small, testable classes; `apply_transaction()` no longer grows with every new category. |
+
+### Trade-offs encountered
+
+- **Singleton:** Global state makes tests depend on each other, so tests need `reset()`. Blocking `__init__` and creating the object with `__new__` is less obvious than a normal constructor. Observers and strategies also live on the shared instance, so tests must clean up registrations. The implementation is not thread-safe.
+
+- **Adapter:** `TransactionAdapter` hardcodes `TransactionCategory.INCOME` and ignores the external object's `typ` field. That is simple and correct for freelance income. A second external source that can also be an expense would need a smarter or separate adapter.
+
+- **Observer:** Notification is synchronous, so a slow or failing observer blocks or breaks the others, and there is no ordering guarantee. Observers receive the net balance and the transaction, not the previous balance. `LowBalanceAlertObserver` keeps state (`alert_triggered`) that is reset on every update.
+
+- **Strategy:** More small classes and indirection for only two rules. Strategies call the public `add_income` / `add_expense` methods, which keeps compatibility with the original tests but leaves those methods callable outside the strategy flow. Unknown categories raise `ValueError` at apply time, not when the `Transaction` is created.
+
+- **Overall:** Strategy and Observer both sit on `apply_transaction()`, so ordering matters: observers fire only after a valid strategy has run. An invalid category fails before any notification.
+
+### What I would do next
+
+Make the adapter category-aware (or add adapters per external source), add a way to inject or fully reset `Balance` for tests (including observers and strategies), and implement the unfinished `summary()` method.
+
 ## Built With
 
 * [Python](https://www.python.org/) – Main programming language
